@@ -13,8 +13,6 @@ Code_Start              EQU 0x8000
     org Code_Start
     di
     ld sp, stack_top
-    ld a, %00000111 ; Change border color
-    out 254, a
     ei
 
     ; Drawing pixels
@@ -57,6 +55,18 @@ Loop:
     call PrintFrames ; 10372
     call PrintLastKey ; 19301
     call PrintMouseCoords ; 10374
+
+    ; Draw line on border
+    ld c, 254
+    ld a, %00000000
+    ld d, %00000111
+
+    out (c), a
+    ld b, 5
+Delay1:
+    djnz Delay1
+    out (c), d
+
     jr Loop
 
 PrintFrames:

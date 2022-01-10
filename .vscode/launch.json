@@ -39,7 +39,7 @@
 			"zrcp": {
 				"hostname": "localhost",
 				"port": 10000,
-                "loadDelay": 700
+                "loadDelay": 1400
 			},
 			"rootFolder": "${workspaceFolder}",
 			"disassemblerArgs": {
