@@ -1,0 +1,60 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Internal Simulator",
+			"type": "dezog",
+			"request": "launch",
+			"remoteType": "zsim",
+            "zsim": {
+                "loadZxRom": true,
+                "visualMemory": true,
+                "memoryModel": "ZXNEXT",
+                "ulaScreen": true,
+                "zxBorderWidth": 20,
+                "vsyncInterrupt": true,
+                "zxKeyboard": true,
+                "zxBeeper": true
+            },
+			"rootFolder": "${workspaceFolder}",
+			"disassemblerArgs": {
+				"esxdosRst": true
+			},
+            "topOfStack": "stack_top",
+            "sjasmplus": [
+                {
+                    "path": "test.sld"
+                }
+            ],
+			"load": "test.sna",
+			"skipInterrupt": false,
+			"startAutomatically": true,
+			"preLaunchTask": "sjasmplus"
+		},
+		{
+			"name": "ZEsarUX",
+			"type": "dezog",
+			"request": "launch",
+			"remoteType": "zrcp",
+			"zrcp": {
+				"hostname": "localhost",
+				"port": 10000,
+                "loadDelay": 700
+			},
+			"rootFolder": "${workspaceFolder}",
+			"disassemblerArgs": {
+				"esxdosRst": true
+			},
+            "topOfStack": "stack_top",
+            "sjasmplus": [
+                {
+                    "path": "test.sld"
+                }
+            ],
+			"load": "test.sna",
+			"skipInterrupt": false,
+            "startAutomatically": true,
+			"preLaunchTask": "sjasmplus"
+		}
+	]
+}

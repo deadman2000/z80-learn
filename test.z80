@@ -1,0 +1,152 @@
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+    DEVICE ZXSPECTRUM128
+
+ROM_OPEN_CHANNEL        EQU 0x1601
+ROM_PRINT               EQU 0x203C
+AT                      EQU 0x16
+ScreenStart             EQU 0x4000
+
+
+stack_top               EQU 0xFFF0
+Code_Start              EQU 0x8000
+
+    org Code_Start
+    di
+    ld sp, stack_top
+    ld a, %00000111 ; Change border color
+    out 254, a
+    ei
+
+    ; Drawing pixels
+    ld a, 0x80  ; draw first pixel in cell row
+    ld hl, ScreenStart ; start cell address
+    ld b, 3     ; blocks count
+
+; Drawing vertical line from top to bottom screen
+DrawBlock:
+    push bc
+    push hl
+    ld b, 8     ; rows count
+DrawRow:
+    push bc
+    push hl
+    ld b, 8     ; cell height
+DrawPixelCell:
+    ; halt
+    ld (hl), a
+    inc h
+    djnz DrawPixelCell
+    ; Next row
+    pop hl
+    ld bc, 0x0020 ; next row offset
+    add hl, bc
+    pop bc
+    djnz DrawRow
+    ; Next block
+    pop hl
+    ld bc, 0x0800 ; next block offset
+    add hl, bc
+    pop bc
+    djnz DrawBlock
+
+Loop:
+    halt
+    call PrintFrames
+    call PrintLastKey
+    call PrintMouseCoords
+    jr Loop
+
+PrintFrames:
+    ; Get frame counter
+    ld hl, (0x5C78)
+    ld a, h
+    call NumToHex
+    ld (CoordsStr+3), de
+    ld a, l
+    call NumToHex
+    ld (CoordsStr+6), de
+
+    ; Text coords
+    ld de, #0001
+    ld (CoordsStr+1), de
+
+    ; Printing
+    ld a, 2
+    call ROM_OPEN_CHANNEL
+    ld de, CoordsStr
+    ld bc, CoordsStrLen
+    call ROM_PRINT
+    ret
+
+PrintLastKey:
+    ld a, (0x5C08)
+    call NumToHex
+    ld (LastKeyCodeStr+3), de
+
+    ; Printing
+    ld a, 2
+    call ROM_OPEN_CHANNEL
+    ld de, LastKeyCodeStr
+    ld bc, LastKeyCodeStrLen
+    call ROM_PRINT
+    ret
+
+PrintMouseCoords:
+    ld bc, 0xfbdf ; get mouse X
+    in a, (c)
+    call NumToHex
+    ld (CoordsStr+3), de
+
+    ld b, 0xff ; get mouse Y
+    in a, (c)
+    call NumToHex
+    ld (CoordsStr+6), de
+
+    ; Text coords
+    ld de, #0000
+    ld (CoordsStr+1), de
+
+    ; Printing
+    ld a, 2
+    call ROM_OPEN_CHANNEL
+    ld de, CoordsStr
+    ld bc, CoordsStrLen
+    call ROM_PRINT
+    ret
+
+CoordsStr:
+    db AT,0,0,"00:00"
+CoordsStrLen:  EQU $ - CoordsStr
+
+LastKeyCodeStr:
+    db AT,2,0,"00"
+LastKeyCodeStrLen:  EQU $ - LastKeyCodeStr
+
+; a - input number
+; de - output chars
+NumToHex:
+    push af ; save a
+    and 0x0f
+    call HexChar
+    ld d, a ; save result
+    pop af  ; return original a value
+    rrca    ; Shift value to get high oct
+    rrca
+    rrca
+    rrca
+    and 0x0f
+    call HexChar
+    ld e, a ; save result
+    ret
+
+; Convert a lower 4bit to hex letter
+HexChar:
+    cp 10
+    jr c, Hex0 ; a < 10 ? return digit
+    add 'A'-10
+    ret
+Hex0:
+    add '0'
+    ret
+
+    SAVESNA "test.sna", Code_Start
