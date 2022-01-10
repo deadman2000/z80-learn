@@ -49,11 +49,14 @@ DrawPixelCell:
     pop bc
     djnz DrawBlock
 
+    ld a, 2
+    call ROM_OPEN_CHANNEL
+
 Loop:
     halt
-    call PrintFrames
-    call PrintLastKey
-    call PrintMouseCoords
+    call PrintFrames ; 10372
+    call PrintLastKey ; 19301
+    call PrintMouseCoords ; 10374
     jr Loop
 
 PrintFrames:
@@ -71,21 +74,16 @@ PrintFrames:
     ld (CoordsStr+1), de
 
     ; Printing
-    ld a, 2
-    call ROM_OPEN_CHANNEL
     ld de, CoordsStr
     ld bc, CoordsStrLen
     call ROM_PRINT
     ret
 
 PrintLastKey:
-    ld a, (0x5C08)
-    call NumToHex
-    ld (LastKeyCodeStr+3), de
+    ld a, (0x5C08) ; Get last key
+    ld (LastKeyCodeStr+13), a
 
     ; Printing
-    ld a, 2
-    call ROM_OPEN_CHANNEL
     ld de, LastKeyCodeStr
     ld bc, LastKeyCodeStrLen
     call ROM_PRINT
@@ -107,8 +105,6 @@ PrintMouseCoords:
     ld (CoordsStr+1), de
 
     ; Printing
-    ld a, 2
-    call ROM_OPEN_CHANNEL
     ld de, CoordsStr
     ld bc, CoordsStrLen
     call ROM_PRINT
@@ -119,7 +115,7 @@ CoordsStr:
 CoordsStrLen:  EQU $ - CoordsStr
 
 LastKeyCodeStr:
-    db AT,2,0,"00"
+    db AT,2,0,"Last key: x"
 LastKeyCodeStrLen:  EQU $ - LastKeyCodeStr
 
 ; a - input number

@@ -9,7 +9,7 @@
             "zsim": {
                 "loadZxRom": true,
                 "visualMemory": true,
-                "memoryModel": "ZXNEXT",
+                "memoryModel": "ZX128K",
                 "ulaScreen": true,
                 "zxBorderWidth": 20,
                 "vsyncInterrupt": true,
