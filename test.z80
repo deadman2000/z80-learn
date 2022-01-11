@@ -15,12 +15,45 @@ Code_Start              EQU 0x8000
     ld sp, stack_top
     ei
 
-    ; Drawing pixels
+    ; call DrawLine
+
+Loop:
+    halt
+
+    ld a, 2
+    call ROM_OPEN_CHANNEL
+
+    ld a, 0
+    ld d, %00000111
+    call DrawBorderLine
+
+    call PrintFrames ; 10372
+
+    ld a, 1
+    ld d, %00000111
+    call DrawBorderLine
+
+    call PrintLastKey ; 19301
+
+    ld a, 2
+    ld d, %00000111
+    call DrawBorderLine
+
+    call PrintMouseCoords ; 10374
+
+    ld a, 3
+    ld d, %00000111
+    call DrawBorderLine
+
+    call DrawCursor
+
+    jr Loop
+
+; Drawing vertical line from top to bottom screen
+DrawLine:
     ld a, 0x80  ; draw first pixel in cell row
     ld hl, ScreenStart ; start cell address
     ld b, 3     ; blocks count
-
-; Drawing vertical line from top to bottom screen
 DrawBlock:
     push bc
     push hl
@@ -30,7 +63,6 @@ DrawRow:
     push hl
     ld b, 8     ; cell height
 DrawPixelCell:
-    ; halt
     ld (hl), a
     inc h
     djnz DrawPixelCell
@@ -47,35 +79,7 @@ DrawPixelCell:
     pop bc
     djnz DrawBlock
 
-    ld a, 2
-    call ROM_OPEN_CHANNEL
-
-Loop:
-    halt
-
-    ld a, 0
-    ld d, %00000111
-    call DrawBorderLine
-
-    call PrintFrames ; 10372
-    
-    ld a, 1
-    ld d, %00000111
-    call DrawBorderLine
-
-    call PrintLastKey ; 19301
-    
-    ld a, 2
-    ld d, %00000111
-    call DrawBorderLine
-
-    call PrintMouseCoords ; 10374
-    
-    ld a, 3
-    ld d, %00000111
-    call DrawBorderLine
-    
-    jr Loop
+    ret
 
 PrintFrames:
     ; Get frame counter
@@ -172,5 +176,63 @@ Delay1:
     out (c), d
     ret
 
+DrawCursor:
+    ; calculating coords
+    ; cell addr = 0x4000 + bn*0x0800 + ln*0x20  +  rn*0x100 + cx
+    ;           = 0x4000 + bn << 11  + ln << 5  +  rn << 8  + cx
+    ;           = 0x4000 + (cy & 0x18) << 8  + (cy & 7) << 5  +  rn << 8  + cx
+    ; cy = y / 8 = y >> 3
+    ; bn = cy / 8 = cy >> 3
+    ; ln = cy % 8 = cy & 7
+    ; rn = y % 8 = y & 7
+    ; cx = x / 8
+    ld bc, ScreenStart ; bc - cell addr
+    ld a, (CursorY)
+    .3 rra   ; a = cy = y / 8 = y >> 3
+    ld e, a  ; e = cy
+    and 0x18 ; a = cy & 0x18
+    add b
+    ld b, a  ; cell addr = 0x4000 + bn << 11
+    ld a, e  ; a = cy
+    and 7
+    .5 rla   ; a = (cy & 7) << 5
+    add a, c
+    ld c, a
+    jr nc, DrawCursor1
+    inc b
+DrawCursor1:
+    ; bc = cell addr = 0x4000 + bn << 11 + ln << 5
+    ; calc x
+    ld a, (CursorX)  ; a = x
+    .3 rra           ; a = cx = x / 8 = x >> 3
+    add c
+    ld c, a
+    jr nc, DrawCursor2
+    inc b
+DrawCursor2:
+    ; bc = cell addr = 0x4000 + bn << 11 + ln << 5 + cx
+
+    ld de, bc
+    ld b, 8
+    ld hl, CursorImg
+DrawCursorRow:
+    ld a, (hl)
+    ld (de), a
+    inc d
+    inc hl
+    djnz DrawCursorRow
+    ret
+
+CursorX: db 16*8
+CursorY: db 10*8
+CursorImg:
+    dg 1-------
+    dg 11------
+    dg 1-1-----
+    dg 11-1----
+    dg 111-1---
+    dg 111111--
+    dg 1-11----
+    dg 11------
 
     SAVESNA "test.sna", Code_Start
