@@ -52,21 +52,29 @@ DrawPixelCell:
 
 Loop:
     halt
-    call PrintFrames ; 10372
-    call PrintLastKey ; 19301
-    call PrintMouseCoords ; 10374
 
-    ; Draw line on border
-    ld c, 254
-    ld a, %00000000
+    ld a, 0
     ld d, %00000111
+    call DrawBorderLine
 
-    out (c), a
-    ld b, 5
-Delay1:
-    djnz Delay1
-    out (c), d
+    call PrintFrames ; 10372
+    
+    ld a, 1
+    ld d, %00000111
+    call DrawBorderLine
 
+    call PrintLastKey ; 19301
+    
+    ld a, 2
+    ld d, %00000111
+    call DrawBorderLine
+
+    call PrintMouseCoords ; 10374
+    
+    ld a, 3
+    ld d, %00000111
+    call DrawBorderLine
+    
     jr Loop
 
 PrintFrames:
@@ -151,5 +159,18 @@ HexChar:
 Hex0:
     add '0'
     ret
+
+; Drawing line on border
+; a line color
+; d background color
+DrawBorderLine:
+    ld c, 254
+    out (c), a
+    ld b, 5
+Delay1:
+    djnz Delay1
+    out (c), d
+    ret
+
 
     SAVESNA "test.sna", Code_Start
