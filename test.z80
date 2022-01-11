@@ -136,10 +136,7 @@ NumToHex:
     call HexChar
     ld d, a ; save result
     pop af  ; return original a value
-    rrca    ; Shift value to get high oct
-    rrca
-    rrca
-    rrca
+    .4 rrca    ; Shift value to get high oct
     and 0x0f
     call HexChar
     ld e, a ; save result
