@@ -10,7 +10,7 @@
             "args": [
                 "--sld=test.sld",
                 "--fullpath",
-            	"test.z80"
+            	"test.asm"
 			],
             "group": {
                 "kind": "build",

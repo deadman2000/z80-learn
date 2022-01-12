@@ -1,57 +1,76 @@
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
     DEVICE ZXSPECTRUM128
 
-ROM_OPEN_CHANNEL        EQU 0x1601
-ROM_PRINT               EQU 0x203C
-AT                      EQU 0x16
-ScreenStart             EQU 0x4000
+    include "consts.asm"
 
 
-stack_top               EQU 0xFFF0
-Code_Start              EQU 0x8000
+stack_top               EQU 0x8100
+Code_Start              EQU 0x8100
+
+    MACRO BORDERCOLOR color
+    ld a, color
+    ld c, 254
+    out (c), a
+    ENDM
 
     org Code_Start
     di
     ld sp, stack_top
     ei
 
-    ; call DrawLine
+    ;call DrawLine ; 6760
+    ;call DrawLine2 ; 22949
+
+    ; Switch memory 0xC000..0xFFFF to RAM7 - second screen bank
+    ld bc, 32765
+    ld a, %00010111
+    out (c), a
+
+    ; clear pixels on second screen
+    xor a
+    ld (SecScreenStart), a
+    ld hl, SecScreenStart
+    ld de, SecScreenStart+1
+    ld bc, ScreenLen
+    ldir
+
+    ; clear attributes on second screen
+    ld a, %00111000
+    ld (SecAttrStart), a
+    ld hl, SecAttrStart
+    ld de, SecAttrStart+1
+    ld bc, AttrLen
+    ldir
 
 Loop:
     halt
 
+    BORDERCOLOR BLACK
     ld a, 2
     call ROM_OPEN_CHANNEL
-
-    ld a, 0
-    ld d, %00000111
-    call DrawBorderLine
-
     call PrintFrames ; 10372
 
-    ld a, 1
-    ld d, %00000111
-    call DrawBorderLine
-
+    BORDERCOLOR BLUE
     call PrintLastKey ; 19301
 
-    ld a, 2
-    ld d, %00000111
-    call DrawBorderLine
-
+    BORDERCOLOR RED
     call PrintMouseCoords ; 10374
 
-    ld a, 3
-    ld d, %00000111
-    call DrawBorderLine
-
+    BORDERCOLOR MAGENTA
     call DrawCursor
 
+    BORDERCOLOR GREEN
+    call ProcessKeyboard
+
+    BORDERCOLOR CYAN
+    call DrawLine ; 6760
+
+    BORDERCOLOR YELLOW
     jr Loop
 
 ; Drawing vertical line from top to bottom screen
 DrawLine:
-    ld a, 0x80  ; draw first pixel in cell row
+    ;ld a, 0x80  ; draw first pixel in cell row
     ld hl, ScreenStart ; start cell address
     ld b, 3     ; blocks count
 DrawBlock:
@@ -63,6 +82,8 @@ DrawRow:
     push hl
     ld b, 8     ; cell height
 DrawPixelCell:
+    ld a, (hl) ; Invert first bit
+    xor 0x80
     ld (hl), a
     inc h
     djnz DrawPixelCell
@@ -78,8 +99,37 @@ DrawPixelCell:
     add hl, bc
     pop bc
     djnz DrawBlock
+    ret
+
+; Pixel address:
+; 15| 14| 13| 12| 11| 10| 9 | 8 || 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0
+; 0   1   0   y7  y6  y2  y1  y0 | y5  y4  y3  x4  x3  x2  x1  x0
+DrawLine2:
+    ld b, 191   ; lines count
+DrawLine2Next:
+    push bc
+    ld a, b
+    and %00000111
+    or %01000000
+    ld h, a
+    ld a, b
+    .3 rra
+    and %00011000
+    or h
+    ld h, a
+
+    ld a, b
+    .2 rla
+    and %11100000
+    ld l, a
+
+    ld (hl), 0x80
+
+    pop  bc
+    djnz DrawLine2Next
 
     ret
+
 
 PrintFrames:
     ; Get frame counter
@@ -111,6 +161,49 @@ PrintLastKey:
     call ROM_PRINT
     ret
 
+; Includes ProcessKeyboard
+PrintKeyboard:
+    ld de, #0003 ; Text coords
+    ld (NumStr+1), de
+    
+    ld bc, 32766
+    in a, (c)
+    call NumToHex
+    ld (NumStr+3), de
+    
+    ld de, NumStr ; Printing
+    ld bc, NumStrLen
+    call ROM_PRINT
+    
+ProcessKeyboard:
+    ld bc, 32766
+    in a, (c)
+    and 0xbf ; ZEsarUX support
+    cp 0xbe ; Spacebar
+    jr z, SpacePressed
+    xor a
+    ld (SpaceIsPressed), a
+    ret
+
+SpacePressed:
+    ld a, (SpaceIsPressed)
+    or a
+    ret nz
+
+    ld a, 1
+    ld (SpaceIsPressed), a
+    ld bc, 32765
+    ld a, (RamMode)
+    xor %00001000
+    ld (RamMode), a
+    out (c), a
+    ret
+
+SpaceIsPressed:
+    db 0
+RamMode:
+    db %00010111
+
 PrintMouseCoords:
     ld bc, 0xfbdf ; get mouse X
     in a, (c)
@@ -139,6 +232,10 @@ CoordsStrLen:  EQU $ - CoordsStr
 LastKeyCodeStr:
     db AT,2,0,"Last key: x"
 LastKeyCodeStrLen:  EQU $ - LastKeyCodeStr
+
+NumStr:
+    db AT,0,0,"00"
+NumStrLen:  EQU $ - NumStr
 
 ; a - input number
 ; de - output chars
@@ -191,7 +288,7 @@ DrawCursor:
     .3 rra   ; a = cy = y / 8 = y >> 3
     ld e, a  ; e = cy
     and 0x18 ; a = cy & 0x18
-    add b
+    or b
     ld b, a  ; cell addr = 0x4000 + bn << 11
     ld a, e  ; a = cy
     and 7
