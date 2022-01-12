@@ -7,12 +7,6 @@
 stack_top               EQU 0x8100
 Code_Start              EQU 0x8100
 
-    MACRO BORDERCOLOR color
-    ld a, color
-    ld c, 254
-    out (c), a
-    ENDM
-
     org Code_Start
     di
     ld sp, stack_top
@@ -22,7 +16,7 @@ Code_Start              EQU 0x8100
     ;call DrawLine2 ; 22949
 
     ; Switch memory 0xC000..0xFFFF to RAM7 - second screen bank
-    ld bc, 32765
+    ld bc, 0x7ffd
     ld a, %00010111
     out (c), a
 
@@ -46,6 +40,7 @@ Loop:
     halt
 
     BORDERCOLOR BLACK
+
     ld a, 2
     call ROM_OPEN_CHANNEL
     call PrintFrames ; 10372
@@ -101,6 +96,7 @@ DrawPixelCell:
     djnz DrawBlock
     ret
 
+; Drawing vertical line by decrementing y-coord and calc pixel address
 ; Pixel address:
 ; 15| 14| 13| 12| 11| 10| 9 | 8 || 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0
 ; 0   1   0   y7  y6  y2  y1  y0 | y5  y4  y3  x4  x3  x2  x1  x0
@@ -166,7 +162,7 @@ PrintKeyboard:
     ld de, #0003 ; Text coords
     ld (NumStr+1), de
     
-    ld bc, 32766
+    ld bc, 0x7ffe
     in a, (c)
     call NumToHex
     ld (NumStr+3), de
@@ -176,10 +172,9 @@ PrintKeyboard:
     call ROM_PRINT
     
 ProcessKeyboard:
-    ld bc, 32766
+    ld bc, 0x7ffe
     in a, (c)
-    and 0xbf ; ZEsarUX support
-    cp 0xbe ; Spacebar
+    and 0x01 ; check spacebar
     jr z, SpacePressed
     xor a
     ld (SpaceIsPressed), a
@@ -192,7 +187,7 @@ SpacePressed:
 
     ld a, 1
     ld (SpaceIsPressed), a
-    ld bc, 32765
+    ld bc, 0x7ffd
     ld a, (RamMode)
     xor %00001000
     ld (RamMode), a
