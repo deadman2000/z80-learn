@@ -36,13 +36,20 @@ CodeStart              EQU 0x8100
     ld bc, AttrLen
     ldir
 
+    call DrawCursor
+
 Loop:
     halt
 
     BORDERCOLOR BLACK
+    call DrawCursor
+    call ReadMouseCoords
+    call DrawCursor
 
     ld a, 2
     call ROM_OPEN_CHANNEL
+    
+    BORDERCOLOR MAGENTA
     call PrintFrames ; 10372
 
     BORDERCOLOR BLUE
@@ -50,9 +57,6 @@ Loop:
 
     BORDERCOLOR RED
     call PrintMouseCoords ; 10374
-
-    BORDERCOLOR MAGENTA
-    call DrawCursor
 
     BORDERCOLOR GREEN
     call ProcessKeyboard
@@ -199,14 +203,29 @@ SpaceIsPressed:
 RamMode:
     db %00010111
 
-PrintMouseCoords:
+ReadMouseCoords:
     ld bc, 0xfbdf ; get mouse X
     in a, (c)
-    call NumToHex
-    ld (CoordsStr+3), de
+    ld (CursorX), a
 
     ld b, 0xff ; get mouse Y
     in a, (c)
+    ld b, a ; invert
+    xor a
+    sub b
+    cp 24*8
+    jr c, MouseYOk
+    ld a, 24*8-1
+MouseYOk:
+    ld (CursorY), a
+    ret
+
+PrintMouseCoords:
+    ld a, (CursorX)
+    call NumToHex
+    ld (CoordsStr+3), de
+
+    ld a, (CursorY)
     call NumToHex
     ld (CoordsStr+6), de
 
@@ -218,6 +237,7 @@ PrintMouseCoords:
     ld de, CoordsStr
     ld bc, CoordsStrLen
     call ROM_PRINT
+
     ret
 
 CoordsStr:
@@ -236,14 +256,16 @@ NumStrLen:  EQU $ - NumStr
 ; de - output chars
 NumToHex:
     push af ; save a
+    ld e, a
     and 0x0f
     call HexChar
     ld d, a ; save result
-    pop af  ; return original a value
+    ld a, e
     .4 rrca    ; Shift value to get high oct
     and 0x0f
     call HexChar
     ld e, a ; save result
+    pop af  ; return original a value
     ret
 
 ; Convert a lower 4bit to hex letter
@@ -290,13 +312,14 @@ DrawCursor:
     .5 rla   ; a = (cy & 7) << 5
     add a, c
     ld c, a
-    jr nc, DrawCursor1
+    jr nc, CalcCursorX
     inc b
-DrawCursor1:
+CalcCursorX:
     ; bc = cell addr = 0x4000 + bn << 11 + ln << 5
     ; calc x
     ld a, (CursorX)  ; a = x
     .3 rra           ; a = cx = x / 8 = x >> 3
+    and 0x1f
     add c
     ld c, a
     jr nc, DrawCursor2
@@ -308,8 +331,10 @@ DrawCursor2:
     ld b, 8
     ld hl, CursorImg
 DrawCursorRow:
-    ld a, (hl)
-    ld (de), a
+    ld a, (de)
+    ld c, (hl) ; get cursor image row
+    xor c
+    ld (de), a ; load row into screen memory
     inc d
     inc hl
     djnz DrawCursorRow
