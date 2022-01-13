@@ -42,6 +42,6 @@ AttrLen                 EQU 32*24
 ; Setup border color
     MACRO BORDERCOLOR color
     ld a, color
-    ld c, 254
+    ld c, 0xfe
     out (c), a
     ENDM

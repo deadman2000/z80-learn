@@ -327,4 +327,7 @@ CursorImg:
     dg 1-11----
     dg 11------
 
+Code_Length:    EQU $-Code_Start+1
+
     SAVESNA "test.sna", Code_Start
+    SAVETAP "test.tap", Code_Start
