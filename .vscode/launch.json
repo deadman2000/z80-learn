@@ -7,20 +7,19 @@
 			"request": "launch",
 			"remoteType": "zsim",
             "zsim": {
-                "loadZxRom": true,
                 "visualMemory": true,
                 "memoryModel": "ZX128K",
                 "ulaScreen": true,
                 "zxBorderWidth": 20,
                 "vsyncInterrupt": true,
                 "zxKeyboard": true,
-                "zxBeeper": true
+                "zxBeeper": true,
             },
 			"rootFolder": "${workspaceFolder}",
 			"disassemblerArgs": {
 				"esxdosRst": true
 			},
-            "topOfStack": "stack_top",
+            "topOfStack": "StackTop",
             "sjasmplus": [
                 {
                     "path": "test.sld"
@@ -45,7 +44,7 @@
 			"disassemblerArgs": {
 				"esxdosRst": true
 			},
-            "topOfStack": "stack_top",
+            "topOfStack": "StackTop",
             "sjasmplus": [
                 {
                     "path": "test.sld"

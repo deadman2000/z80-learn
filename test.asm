@@ -4,12 +4,12 @@
     include "consts.asm"
 
 
-stack_top               EQU 0x8100
-Code_Start              EQU 0x8100
+StackTop               EQU 0x8100
+CodeStart              EQU 0x8100
 
-    org Code_Start
+    org CodeStart
     di
-    ld sp, stack_top
+    ld sp, StackTop
     ei
 
     ;call DrawLine ; 6760
@@ -327,7 +327,7 @@ CursorImg:
     dg 1-11----
     dg 11------
 
-Code_Length:    EQU $-Code_Start+1
+CodeLength:    EQU $-CodeStart+1
 
-    SAVESNA "test.sna", Code_Start
-    SAVETAP "test.tap", Code_Start
+    SAVESNA "test.sna", CodeStart
+    SAVETAP "test.tap", CodeStart
