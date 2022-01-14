@@ -54,6 +54,33 @@
 			"skipInterrupt": false,
             "startAutomatically": true,
 			"preLaunchTask": "sjasmplus"
-		}
+		},
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "Unit Tests - Simulator",
+            "unitTests": true,
+            "presentation": {
+                "hidden": true
+            },
+            "remoteType": "zsim",
+            "zsim": {
+                "visualMemory": true,
+                "memoryModel": "RAM"
+            },
+            "sjasmplus": [
+                {
+                    "path": "test.sld"
+                }
+            ],
+            "commandsAfterLaunch": [
+                "-logpoint enable",
+                "-assertion enable",
+                "-wpmem enable"
+            ],
+            "startAutomatically": true,
+            "rootFolder": "${workspaceFolder}",
+            "load": "test.sna"
+        }
 	]
 }

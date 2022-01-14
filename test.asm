@@ -2,6 +2,7 @@
     DEVICE ZXSPECTRUM128
 
     include "consts.asm"
+    include "unit_tests.asm"
 
 
 StackTop               EQU 0x8100
