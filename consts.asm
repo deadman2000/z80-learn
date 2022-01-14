@@ -30,6 +30,20 @@ WHITE                   EQU 7
 ; $7FFE Space Symbol M    N    B
 
 ; Memory
+
+; FF58..FFFF Reserved          | Bank 0  | Bank 1 | Bank 2 | Bank 3 | Bank 4 | Bank 5  | Bank 6 | Bank 7
+; C000..FF57 Avaliable memory  |                                             | Screen1 |        | Screen2
+
+; 8000..BFFF Avaliable memory  | Bank 2
+
+; 5CCB..7FFF Avaliable memory  |
+; 5CC0..5CCA Reserved          |
+; 5C00..5CBF System variables  | Bank 5
+; 5B00..5AFF Printer buffer    |
+; 4000..57FF Screen            |
+
+; 0000..3FFF ROM
+
 ScreenStart             EQU 0x4000
 ScreenLen               EQU 0x1800
 AttrStart               EQU ScreenStart+ScreenLen
