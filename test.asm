@@ -1,7 +1,7 @@
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
     DEVICE ZXSPECTRUM128
 
-    include "consts.asm"
+    include "consts.inc"
 
 
 StackTop               EQU 0x8100
@@ -66,6 +66,9 @@ Loop:
 
     BORDERCOLOR YELLOW
     jr Loop
+
+
+    include "mouse.inc"
 
 ; Drawing vertical line from top to bottom screen
 DrawLine:
@@ -203,23 +206,6 @@ SpaceIsPressed:
 RamMode:
     db %00010111
 
-ReadMouseCoords:
-    ld bc, 0xfbdf ; get mouse X
-    in a, (c)
-    ld (CursorX), a
-
-    ld b, 0xff ; get mouse Y
-    in a, (c)
-    ld b, a ; invert
-    xor a
-    sub b
-    cp 24*8
-    jr c, MouseYOk
-    ld a, 24*8-1
-MouseYOk:
-    ld (CursorY), a
-    ret
-
 PrintMouseCoords:
     ld a, (CursorX)
     call NumToHex
@@ -233,6 +219,26 @@ PrintMouseCoords:
     ld de, #0000
     ld (CoordsStr+1), de
 
+    ; Printing
+    ld de, CoordsStr
+    ld bc, CoordsStrLen
+    call ROM_PRINT
+
+    
+    ld bc, 0xfbdf ; get mouse X
+    in a, (c)
+    call NumToHex
+    ld (CoordsStr+3), de
+    
+    ld bc, 0xffdf ; get mouse Y
+    in a, (c)   ; swap a anb b, for invert shift sign
+    call NumToHex
+    ld (CoordsStr+6), de
+
+    ; Text coords
+    ld de, #0600
+    ld (CoordsStr+1), de
+    
     ; Printing
     ld de, CoordsStr
     ld bc, CoordsStrLen
@@ -289,68 +295,6 @@ Delay1:
     djnz Delay1
     out (c), d
     ret
-
-DrawCursor:
-    ; calculating coords
-    ; cell addr = 0x4000 + bn*0x0800 + ln*0x20  +  rn*0x100 + cx
-    ;           = 0x4000 + bn << 11  + ln << 5  +  rn << 8  + cx
-    ;           = 0x4000 + (cy & 0x18) << 8  + (cy & 7) << 5  +  rn << 8  + cx
-    ; cy = y / 8 = y >> 3
-    ; bn = cy / 8 = cy >> 3
-    ; ln = cy % 8 = cy & 7
-    ; rn = y % 8 = y & 7
-    ; cx = x / 8
-    ld bc, ScreenStart ; bc - cell addr
-    ld a, (CursorY)
-    .3 rra   ; a = cy = y / 8 = y >> 3
-    ld e, a  ; e = cy
-    and 0x18 ; a = cy & 0x18
-    or b
-    ld b, a  ; cell addr = 0x4000 + bn << 11
-    ld a, e  ; a = cy
-    and 7
-    .5 rla   ; a = (cy & 7) << 5
-    add a, c
-    ld c, a
-    jr nc, CalcCursorX
-    inc b
-CalcCursorX:
-    ; bc = cell addr = 0x4000 + bn << 11 + ln << 5
-    ; calc x
-    ld a, (CursorX)  ; a = x
-    .3 rra           ; a = cx = x / 8 = x >> 3
-    and 0x1f
-    add c
-    ld c, a
-    jr nc, DrawCursor2
-    inc b
-DrawCursor2:
-    ; bc = cell addr = 0x4000 + bn << 11 + ln << 5 + cx
-
-    ld de, bc
-    ld b, 8
-    ld hl, CursorImg
-DrawCursorRow:
-    ld a, (de)
-    ld c, (hl) ; get cursor image row
-    xor c
-    ld (de), a ; load row into screen memory
-    inc d
-    inc hl
-    djnz DrawCursorRow
-    ret
-
-CursorX: db 16*8
-CursorY: db 10*8
-CursorImg:
-    dg 1-------
-    dg 11------
-    dg 1-1-----
-    dg 11-1----
-    dg 111-1---
-    dg 111111--
-    dg 1-11----
-    dg 11------
 
 CodeLength:    EQU $-CodeStart+1
 
