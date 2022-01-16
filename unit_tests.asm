@@ -1,6 +1,10 @@
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+    DEVICE ZXSPECTRUM128
+    
     include "unit_tests.inc"
 
     ORG 0x5CCB
+CodeStart:
     UNITTEST_INITIALIZE
     ret
 
@@ -16,3 +20,5 @@ UT_Test1: ; Shift 2 pixels right with overflow
     TC_END
 
     ENDMODULE
+    
+    SAVESNA "unit_tests.sna", CodeStart

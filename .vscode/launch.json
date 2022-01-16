@@ -1,11 +1,11 @@
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Internal Simulator",
-			"type": "dezog",
-			"request": "launch",
-			"remoteType": "zsim",
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Internal Simulator",
+            "type": "dezog",
+            "request": "launch",
+            "remoteType": "zsim",
             "zsim": {
                 "visualMemory": true,
                 "memoryModel": "ZX128K",
@@ -15,46 +15,46 @@
                 "zxKeyboard": true,
                 "zxBeeper": true,
             },
-			"rootFolder": "${workspaceFolder}",
-			"disassemblerArgs": {
-				"esxdosRst": true
-			},
+            "rootFolder": "${workspaceFolder}",
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
             "topOfStack": "StackTop",
             "sjasmplus": [
                 {
                     "path": "test.sld"
                 }
             ],
-			"load": "test.sna",
-			"skipInterrupt": false,
-			"startAutomatically": true,
-			"preLaunchTask": "sjasmplus"
-		},
-		{
-			"name": "ZEsarUX",
-			"type": "dezog",
-			"request": "launch",
-			"remoteType": "zrcp",
-			"zrcp": {
-				"hostname": "localhost",
-				"port": 10000,
-                "loadDelay": 1400
-			},
-			"rootFolder": "${workspaceFolder}",
-			"disassemblerArgs": {
-				"esxdosRst": true
-			},
-            "topOfStack": "StackTop",
-            "sjasmplus": [
-                {
-                    "path": "test.sld"
-                }
-            ],
-			"load": "test.sna",
-			"skipInterrupt": false,
+            "load": "test.sna",
+            "skipInterrupt": false,
             "startAutomatically": true,
-			"preLaunchTask": "sjasmplus"
-		},
+            "preLaunchTask": "sjasmplus"
+        },
+        {
+            "name": "ZEsarUX",
+            "type": "dezog",
+            "request": "launch",
+            "remoteType": "zrcp",
+            "zrcp": {
+                "hostname": "localhost",
+                "port": 10000,
+                "loadDelay": 1400
+            },
+            "rootFolder": "${workspaceFolder}",
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
+            "topOfStack": "StackTop",
+            "sjasmplus": [
+                {
+                    "path": "test.sld"
+                }
+            ],
+            "load": "test.sna",
+            "skipInterrupt": false,
+            "startAutomatically": true,
+            "preLaunchTask": "sjasmplus"
+        },
         {
             "type": "dezog",
             "request": "launch",
@@ -70,7 +70,7 @@
             },
             "sjasmplus": [
                 {
-                    "path": "test.sld"
+                    "path": "unit_tests.sld"
                 }
             ],
             "commandsAfterLaunch": [
@@ -80,7 +80,8 @@
             ],
             "startAutomatically": true,
             "rootFolder": "${workspaceFolder}",
-            "load": "test.sna"
+            "load": "unit_tests.sna",
+            "preLaunchTask": "build_unittest"
         }
-	]
+    ]
 }

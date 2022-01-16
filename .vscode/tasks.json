@@ -4,29 +4,30 @@
         {
             "label": "sjasmplus",
             "type": "shell",
-            "command": "sjasmplus",    						
+            "command": "sjasmplus",
             "args": [
                 "--sld=test.sld",
                 "--fullpath",
-            	"test.asm"
-			],
-            "problemMatcher": {
-                "fileLocation": [
-                    "relative",
-                    "${workspaceRoot}"
-                ],
-                "pattern": {
-                    "regexp": "^(.*)\\((\\d+)\\):\\s+(warning|error):\\s+(.*)$",
-                    "file": 1,
-                    "line": 2,
-                    "severity": 3,
-                    "message": 4
-                }
-            },
+                "test.asm"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
+            },
+            "dependsOn": [
+                "build_unittest"
+            ]
+        },
+        {
+            "label": "build_unittest",
+            "type": "shell",
+            "command": "sjasmplus",
+            "args": [
+                "--sld=unit_tests.sld",
+                "--fullpath",
+                "unit_tests.asm"
+            ],
+            "group": "test"
         }
     ]
 }
