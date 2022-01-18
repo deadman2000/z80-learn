@@ -97,7 +97,7 @@ DrawCursor:
     ld a, e  ; a = cy
     and 7
     .5 rla   ; a = (cy & 7) << 5
-    add a, c
+    add c
     ld c, a
     jr nc, CalcCursorX
     inc b
@@ -105,10 +105,18 @@ CalcCursorX:
     ; bc = cell addr = 0x4000 + bn << 11 + ln << 5
     ; calc x
     ld a, (CursorX)  ; a = x
+    ld e, a          ; save x for calc pos in cell
     .3 rra           ; a = cx = x / 8 = x >> 3
     and 0x1f
+    ld (CursorColumn), a
     add c
     ld c, a
+    
+    ; Calc pos in cell
+    ld a, e
+    and 0x7
+    ld (CursorX_InCell), a
+
     jr nc, DrawCursor2
     inc b
 DrawCursor2:
@@ -118,19 +126,63 @@ DrawCursor2:
     ld b, 8
     ld hl, CursorImg
 DrawCursorRow:
-    ld a, (de)
-    ld c, (hl) ; get cursor image row
+    push bc
+    ld a, (CursorX_InCell)
+    or a
+    jr z, DrawCursorZeroX
+    ld b, a    ; b = X coord in cell
+    ld a, (hl) ; get cursor image row
+ShiftCursorX_Right:
+    rra
+    and 0x7f
+    djnz ShiftCursorX_Right
+    jr DrawCursorXOR
+
+DrawCursorZeroX:
+    ld a, (hl)
+    
+DrawCursorXOR:
+    ld c, a
+    ld a, (de) ; load current screen pixels
     xor c
     ld (de), a ; load row into screen memory
+
+; Drawing right orverflowed part
+    ld a, (CursorColumn)
+    xor 0x1f
+    jr z, DrawRowEnd ; Last column
+    ld a, (CursorX_InCell)
+    or a
+    jr z, DrawRowEnd ; Zero aligned
+    sub 8
+    neg    ; a = 8 - a
+    ld b, a
+    ld a, (hl) ; get cursor image row
+ShiftCursorX_Left:
+    rla
+    and 0xfe
+    djnz ShiftCursorX_Left 
+    
+    ld c, a
+    inc e
+    ld a, (de) ; load current screen pixels
+    xor c
+    ld (de), a ; load row into screen memory
+    dec e
+
+DrawRowEnd:
     inc d
     inc hl
+    pop bc
     djnz DrawCursorRow
     ret
 
 PrevMouseX: db 0
 PrevMouseY: db 0
 
-CursorX: db 16*8
+CursorX: db 0x3e ; 16*8 ; Cursor position in pixels 0..255
+CursorColumn: db 16 ; Cursor cell number 0..31
+CursorX_InCell: db 0 ; Cursor position in cell 0..7
 CursorY: db 10*8
 
 CursorImg:
