@@ -42,18 +42,18 @@ Loop:
     halt
 
     BORDERCOLOR BLACK
-    call DrawCursor
+    call DrawCursor ; Remove cursor from screen
     call ReadMouseCoords
-    call DrawCursor
+    call DrawCursor ; Draw new cursor
 
     ld a, 2
     call ROM_OPEN_CHANNEL
     
-    BORDERCOLOR MAGENTA
-    call PrintFrames ; 10372
+    ;  BORDERCOLOR MAGENTA
+    ;call PrintFrames ; 10372
 
-    BORDERCOLOR BLUE
-    call PrintLastKey ; 19301
+    ;BORDERCOLOR BLUE
+    ;call PrintLastKey ; 19301
 
     BORDERCOLOR RED
     call PrintMouseCoords ; 10374
@@ -64,7 +64,7 @@ Loop:
     BORDERCOLOR CYAN
     call DrawLine ; 6760
 
-    BORDERCOLOR YELLOW
+    BORDERCOLOR WHITE
     jr Loop
 
 
@@ -231,7 +231,7 @@ PrintMouseCoords:
     ld (CoordsStr+3), de
     
     ld bc, 0xffdf ; get mouse Y
-    in a, (c)   ; swap a anb b, for invert shift sign
+    in a, (c)
     call NumToHex
     ld (CoordsStr+6), de
 

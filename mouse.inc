@@ -78,55 +78,56 @@ CCPY_Up:
     ret
 
 DrawCursor:
-    ; calculating coords
-    ; cell addr = 0x4000 + bn*0x0800 + ln*0x20  +  rn*0x100 + cx
-    ;           = 0x4000 + bn << 11  + ln << 5  +  rn << 8  + cx
-    ;           = 0x4000 + (cy & 0x18) << 8  + (cy & 7) << 5  +  rn << 8  + cx
-    ; cy = y / 8 = y >> 3
-    ; bn = cy / 8 = cy >> 3
-    ; ln = cy % 8 = cy & 7
-    ; rn = y % 8 = y & 7
-    ; cx = x / 8
-    ld bc, ScreenStart ; bc - cell addr
-    ld a, (CursorY)
-    .3 rra   ; a = cy = y / 8 = y >> 3
-    ld e, a  ; e = cy
-    and 0x18 ; a = cy & 0x18
-    or b
-    ld b, a  ; cell addr = 0x4000 + bn << 11
-    ld a, e  ; a = cy
-    and 7
-    .5 rla   ; a = (cy & 7) << 5
-    add c
-    ld c, a
-    jr nc, CalcCursorX
-    inc b
-CalcCursorX:
-    ; bc = cell addr = 0x4000 + bn << 11 + ln << 5
-    ; calc x
-    ld a, (CursorX)  ; a = x
-    ld e, a          ; save x for calc pos in cell
-    .3 rra           ; a = cx = x / 8 = x >> 3
-    and 0x1f
-    ld (CursorColumn), a
-    add c
-    ld c, a
-    
+    ld a, (CursorY) ; Store CursorY to DrawCursorY for incrementing
+    ld (DrawCursorY), a
+
     ; Calc pos in cell
-    ld a, e
+    ld a, (CursorX)  ; a = x
     and 0x7
     ld (CursorX_InCell), a
 
-    jr nc, DrawCursor2
-    inc b
-DrawCursor2:
-    ; bc = cell addr = 0x4000 + bn << 11 + ln << 5 + cx
-
-    ld de, bc
-    ld b, 8
-    ld hl, CursorImg
+    ld b, 8          ; cursor height - 8 rows
+    ld hl, CursorImg ; Cursor start address
 DrawCursorRow:
     push bc
+
+    ; calculating coords
+    ; 15| 14| 13| 12| 11| 10| 9 | 8 || 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0
+    ; 0   1   0   y7  y6  y2  y1  y0 | y5  y4  y3  x7  x6  x5  x4  x3
+
+    ld bc, ScreenStart ; bc = 0100 0000 0000 0000
+    ld a, (DrawCursorY)
+    ; y0..y2
+    and 7
+    or b
+    ld b, a  ; b = 010 xx y2..y0
+
+    ld a, (DrawCursorY)
+    ; y3..y5
+    .3 rra   ; a = xxx y7..y3
+    ld e, a
+    and 0x18 ; a = 000 y7..y6 000
+    or b
+    ld b, a  ; b = 010 y7..y6 y2..y0
+    
+    ; y6..y7
+    ld a, e  ; a = xxx y7..y3
+    and 7    ; a = 00000 y5..y3
+    .5 rla   ; a = y5..y3 00000   ; TODO .3 rra
+    or c
+    ld c, a  ; c = y5..y3 00000
+
+    ; calc x
+    ld a, (CursorX)  ; a = x
+    .3 rra           ; a = xxx x7..x3
+    and 0x1f         ; a = 000 x7..x3
+    ld (CursorColumn), a
+    or c
+    ld c, a
+    ; end calc
+
+    ld de, bc
+
     ld a, (CursorX_InCell)
     or a
     jr z, DrawCursorZeroX
@@ -171,10 +172,20 @@ ShiftCursorX_Left:
     dec e
 
 DrawRowEnd:
-    inc d
+    ; DrawCursorY++
+    ld a, (DrawCursorY)
+    inc a
+    cp 192
+    jr nc, DrawEndOverflowY
+    ld (DrawCursorY), a
+
+    inc d ; increment y coord
     inc hl
     pop bc
     djnz DrawCursorRow
+    ret
+DrawEndOverflowY:
+    pop bc
     ret
 
 PrevMouseX: db 0
@@ -184,6 +195,7 @@ CursorX: db 0x3e ; 16*8 ; Cursor position in pixels 0..255
 CursorColumn: db 16 ; Cursor cell number 0..31
 CursorX_InCell: db 0 ; Cursor position in cell 0..7
 CursorY: db 10*8
+DrawCursorY: db 0
 
 CursorImg:
     dg 1-------

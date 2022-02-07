@@ -44,6 +44,13 @@ WHITE                   EQU 7
 
 ; 0000..3FFF ROM
 
+; Screen
+; 256x192 pixels   32x24 cells
+
+; Pixel address:
+; 15| 14| 13| 12| 11| 10| 9 | 8 || 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0
+; 0   1   0   y7  y6  y2  y1  y0 | y5  y4  y3  x4  x3  x2  x1  x0
+
 ScreenStart             EQU 0x4000
 ScreenLen               EQU 0x1800
 AttrStart               EQU ScreenStart+ScreenLen
